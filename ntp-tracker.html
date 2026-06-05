@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NTP Job Tracker — Remi Roofing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #EEF2F8;
+    --surface: #FFFFFF;
+    --surface2: #F4F6FB;
+    --surface3: #E6EAF4;
+    --border: #DDE2EE;
+    --accent: #2BA5F0;
+    --accent-dark: #1A8DD4;
+    --accent2: #1A8DD4;
+    --text: #111827;
+    --text2: #4B5675;
+    --text3: #9AA3BD;
+    --success: #16A34A;
+    --warning: #D97706;
+    --danger: #DC2626;
+    --danger2: #B91C1C;
+    --info: #0284C7;
+    --purple: #7C3AED;
+    --orange: #EA580C;
+    --teal: #0D9488;
+    --radius: 10px;
+    --radius-sm: 7px;
+    --shadow: 0 2px 16px rgba(43,100,165,0.10);
+    --shadow-sm: 0 1px 4px rgba(43,100,165,0.07);
+    --shadow-hover: 0 6px 24px rgba(43,100,165,0.14);
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  button { cursor: pointer; font: inherit; border: none; background: none; }
+  input, textarea, select {
+    font: inherit;
+    background: #fff;
+    color: var(--text);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    width: 100%;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(43,165,240,.15);
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  select option { background: #fff; }
+  a { color: var(--accent); text-decoration: none; }
+
+  /* ── Header ── */
+  header {
+    background: #fff;
+    border-bottom: 1.5px solid var(--border);
+    padding: 9px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 6px rgba(43,100,165,0.07);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -.4px;
+    color: var(--text);
+  }
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -.5px;
+  }
+  .header-search {
+    flex: 1;
+    max-width: 280px;
+  }
+  .header-search input {
+    padding: 7px 12px;
+    font-size: .85rem;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    width: 100%;
+  }
+  .header-search input:focus {
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(43,165,240,.12);
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: .875rem;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(43,165,240,.3);
+  }
+  .btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(43,165,240,.35); }
+  .btn-ghost {
+    background: #fff;
+    color: var(--text2);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: #c5cfe0; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: var(--danger2); }
+  .btn-sm { padding: 5px 10px; font-size: .8rem; }
+
+  /* ── Summary Bar ── */
+  .summary-bar {
+    background: #fff;
+    border-bottom: 1.5px solid var(--border);
+    padding: 6px 18px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .summary-bar::-webkit-scrollbar { display: none; }
+  .stat-chip {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: .75rem;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .stat-chip .count {
+    font-weight: 700;
+    font-size: .92rem;
+    color: var(--text);
+  }
+  .stat-chip .label { color: var(--text2); }
+
+  /* ── Filter Bar ── */
+  .filter-bar {
+    background: #fff;
+    border-bottom: 1.5px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-bar label { color: var(--text2); font-size: .8rem; font-weight: 600; }
+  .filter-chip {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: .78rem;
+    font-weight: 600;
+    border: 1.5px solid transparent;
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .filter-chip:hover { color: var(--text); border-color: var(--border); }
+  .filter-chip.active { color: #fff; }
+
+  /* ── Board ── */
+  .board-wrap {
+    padding: 8px;
+    overflow-x: auto;
+    min-height: calc(100vh - 140px);
+  }
+  .board {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  /* ── Column ── */
+  .column {
+    flex: 1 1 0;
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .col-header {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .col-title {
+    font-weight: 700;
+    font-size: .82rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .col-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .col-count {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--text2);
+  }
+  .cards-area {
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: background .15s;
+    padding: 2px;
+    border-radius: var(--radius);
+  }
+  .cards-area.drag-over {
+    background: rgba(43,165,240,.06);
+    outline: 2px dashed var(--accent);
+  }
+
+  /* ── Card ── */
+  .card {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 11px;
+    cursor: grab;
+    transition: box-shadow .15s, transform .1s, border-color .15s;
+    position: relative;
+    user-select: none;
+    box-shadow: var(--shadow-sm);
+  }
+  .card:hover { box-shadow: var(--shadow-hover); border-color: #c5cfe0; transform: translateY(-1px); }
+  .card.dragging { opacity: .45; transform: scale(.97); cursor: grabbing; }
+  .card.at-risk {
+    border-left: 3px solid var(--danger);
+    border-left-width: 3px;
+  }
+  .card.has-flags { border-left: 3px solid var(--warning); }
+  .card.at-risk.has-flags { border-left: 3px solid var(--danger); }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .card-name {
+    font-weight: 700;
+    font-size: .85rem;
+    line-height: 1.2;
+  }
+  .card-rep {
+    font-size: .7rem;
+    color: var(--text3);
+    font-weight: 500;
+    margin-top: 1px;
+  }
+  .date-empty { color: var(--text3); }
+  .hubspot-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: #fff;
+    background: #FF7A59;
+    border: none;
+    border-radius: 5px;
+    padding: 4px 10px;
+    margin-bottom: 6px;
+    text-decoration: none;
+    transition: background .12s, transform .1s;
+    cursor: pointer;
+  }
+  .hubspot-link:hover { background: #e8654a; transform: translateY(-1px); }
+  .card-menu-btn {
+    color: var(--text3);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color .15s, background .15s;
+  }
+  .card-menu-btn:hover { color: var(--text); background: var(--surface3); }
+  .card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: .75rem;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .card-meta span { display: flex; align-items: center; gap: 5px; }
+  .card-meta .ico { font-size: .85rem; }
+  .card-notes {
+    font-size: .75rem;
+    color: var(--text2);
+    line-height: 1.35;
+    margin-bottom: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 5px;
+    max-height: 48px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .card-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .flag-badge {
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: .7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 7px;
+  }
+  .last-contact {
+    font-size: .73rem;
+    color: var(--text3);
+  }
+  .card-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .card-action-btn {
+    padding: 3px 7px;
+    border-radius: 5px;
+    font-size: .72rem;
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1.5px solid var(--border);
+    transition: all .15s;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .card-action-btn:hover { background: var(--surface3); color: var(--text); border-color: #c5cfe0; }
+  .card-action-btn.log-btn { color: var(--accent); border-color: rgba(43,165,240,.3); background: rgba(43,165,240,.06); }
+  .card-action-btn.log-btn:hover { background: rgba(43,165,240,.12); }
+
+  /* ── Touch log ── */
+  .touch-log {
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .touch-entry {
+    font-size: .75rem;
+    color: var(--text2);
+    line-height: 1.35;
+    display: flex;
+    flex-direction: column;
+  }
+  .touch-ts { color: var(--text3); font-size: .7rem; }
+  .touch-log-input-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .touch-log-input-row input { font-size: .78rem; padding: 5px 8px; }
+  .touch-log-input-row button {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    font-size: .78rem;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(43,165,240,.3);
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(4px);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeIn .15s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+    animation: slideUp .15s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header {
+    padding: 18px 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .modal-title { font-weight: 700; font-size: 1.05rem; }
+  .modal-close {
+    color: var(--text3);
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color .15s;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 0 20px 20px; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .flags-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .flag-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all .15s;
+    font-size: .82rem;
+    font-weight: 500;
+  }
+  .flag-checkbox:hover { border-color: var(--accent); background: rgba(43,165,240,.05); }
+  .flag-checkbox.checked { border-color: currentColor; }
+  .flag-checkbox input[type=checkbox] { display: none; }
+  .flag-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* ── Context Menu ── */
+  .ctx-menu {
+    position: fixed;
+    z-index: 600;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 6px;
+    min-width: 170px;
+    animation: fadeIn .1s ease;
+  }
+  .ctx-item {
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all .1s;
+  }
+  .ctx-item:hover { background: var(--surface2); color: var(--text); border-radius: var(--radius-sm); }
+  .ctx-item.danger { color: var(--danger); }
+  .ctx-item.danger:hover { background: rgba(239,68,68,.1); }
+  .ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* ── Flag Colors ── */
+  .flag-shingle    { color: #92400E; background: #FEF3C7; }
+  .flag-cancel     { color: #991B1B; background: #FEE2E2; }
+  .flag-unreachable{ color: #374151; background: #F3F4F6; }
+  .flag-schedule   { color: #075985; background: #E0F2FE; }
+  .flag-changeorder{ color: #4C1D95; background: #EDE9FE; }
+  .flag-permit     { color: #7C2D12; background: #FFEDD5; }
+  .flag-decking    { color: #134E4A; background: #CCFBF1; }
+
+  /* column accent colors */
+  [data-col="new"] .col-dot            { background: var(--accent); }
+  [data-col="no-answer"] .col-dot      { background: var(--text3); }
+  [data-col="day1"] .col-dot           { background: var(--success); }
+  [data-col="incomplete"] .col-dot     { background: var(--warning); }
+  [data-col="at-risk"] .col-dot        { background: var(--danger); }
+  [data-col="day4-pending"] .col-dot   { background: var(--info); }
+  [data-col="day4-complete"] .col-dot  { background: #059669; }
+  [data-col="change-order"] .col-dot   { background: var(--purple); }
+  [data-col="installed"] .col-dot      { background: #059669; }
+
+  /* column header accent tints */
+  [data-col="new"] .col-header         { border-top: 2.5px solid var(--accent); }
+  [data-col="no-answer"] .col-header   { border-top: 2.5px solid var(--text3); }
+  [data-col="day1"] .col-header        { border-top: 2.5px solid var(--success); }
+  [data-col="incomplete"] .col-header  { border-top: 2.5px solid var(--warning); }
+  [data-col="at-risk"] .col-header     { border-top: 2.5px solid var(--danger); }
+  [data-col="day4-pending"] .col-header{ border-top: 2.5px solid var(--info); }
+  [data-col="day4-complete"] .col-header{ border-top: 2.5px solid #059669; }
+  [data-col="change-order"] .col-header{ border-top: 2.5px solid var(--purple); }
+  [data-col="installed"] .col-header   { border-top: 2.5px solid #059669; }
+
+  /* ── Toast ── */
+  .toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 700;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    font-size: .875rem;
+    font-weight: 500;
+    box-shadow: var(--shadow);
+    animation: slideRight .2s ease;
+    pointer-events: all;
+    max-width: 300px;
+  }
+  @keyframes slideRight { from { transform: translateX(40px); opacity: 0; } }
+  .toast.success { border-left: 3px solid var(--success); }
+  .toast.info    { border-left: 3px solid var(--info); }
+
+  /* ── Collapsible column ── */
+  .col-collapse-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: .85rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color .12s;
+    flex-shrink: 0;
+  }
+  .col-collapse-btn:hover { color: var(--text2); }
+  .column.collapsed .cards-area { display: none; }
+  .column.collapsed .col-collapse-btn { transform: rotate(-90deg); }
+
+  /* ── Empty state ── */
+  .empty-col {
+    text-align: center;
+    padding: 40px 10px 28px;
+    color: var(--text3);
+    font-size: .8rem;
+    border: 1.5px dashed #c5cfe0;
+    border-radius: var(--radius);
+    background: rgba(43,165,240,.02);
+    margin-top: 4px;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c5cfe0; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+
+  /* ── Mobile ── */
+  @media (max-width: 600px) {
+    .board-wrap { padding: 10px; }
+    .column { width: 230px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .flags-grid { grid-template-columns: 1fr; }
+    header { padding: 10px 14px; }
+    .logo span.full { display: none; }
+  }
+
+  /* ── Dark Mode ── */
+  html[data-theme="dark"] {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --surface3: #2c3150;
+    --border: #323659;
+    --text: #e8eaf6;
+    --text2: #9aa0c4;
+    --text3: #5c6290;
+    --shadow: 0 4px 24px rgba(0,0,0,.5);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,.4);
+    --shadow-hover: 0 6px 28px rgba(0,0,0,.6);
+  }
+  html[data-theme="dark"] header,
+  html[data-theme="dark"] .col-header,
+  html[data-theme="dark"] .summary-bar,
+  html[data-theme="dark"] .filter-bar,
+  html[data-theme="dark"] .modal,
+  html[data-theme="dark"] .ctx-menu,
+  html[data-theme="dark"] .toast { background: var(--surface) !important; border-color: var(--border) !important; }
+  html[data-theme="dark"] .card { background: var(--surface) !important; border-color: var(--border) !important; }
+  html[data-theme="dark"] .card:hover { border-color: var(--surface3) !important; }
+  html[data-theme="dark"] input,
+  html[data-theme="dark"] textarea,
+  html[data-theme="dark"] select { background: var(--surface2) !important; border-color: var(--border) !important; color: var(--text) !important; }
+  html[data-theme="dark"] .btn-ghost { background: var(--surface2) !important; border-color: var(--border) !important; }
+  html[data-theme="dark"] .btn-ghost:hover { background: var(--surface3) !important; }
+  html[data-theme="dark"] .card-action-btn { background: var(--surface2) !important; border-color: var(--border) !important; }
+  html[data-theme="dark"] .flag-checkbox { border-color: var(--border) !important; }
+  html[data-theme="dark"] .flag-checkbox:hover { background: var(--surface2) !important; }
+  html[data-theme="dark"] .stat-chip { background: var(--surface2) !important; border-color: var(--border) !important; }
+  html[data-theme="dark"] .filter-chip { background: var(--surface2) !important; }
+  html[data-theme="dark"] .empty-col { border-color: var(--border) !important; background: rgba(255,255,255,.02) !important; }
+  html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--surface3); }
+  html[data-theme="dark"] .flag-shingle    { color: #fbbf24; background: rgba(245,158,11,.15); }
+  html[data-theme="dark"] .flag-cancel     { color: #f87171; background: rgba(239,68,68,.15); }
+  html[data-theme="dark"] .flag-unreachable{ color: var(--text2); background: var(--surface2); }
+  html[data-theme="dark"] .flag-schedule   { color: #7dd3fc; background: rgba(56,189,248,.12); }
+  html[data-theme="dark"] .flag-changeorder{ color: #c4b5fd; background: rgba(168,85,247,.12); }
+  html[data-theme="dark"] .flag-permit     { color: #fdba74; background: rgba(249,115,22,.12); }
+  html[data-theme="dark"] .flag-decking    { color: #5eead4; background: rgba(20,184,166,.12); }
+
+  /* ── Density ── */
+  body.density-compact .card { padding: 8px 10px; }
+  body.density-compact .col-header { padding: 7px 12px; }
+  body.density-compact .card-meta { gap: 1px; margin-bottom: 5px; }
+  body.density-compact .card-notes { max-height: 40px; margin-bottom: 5px; }
+  body.density-compact .column { gap: 5px; }
+  body.density-compact .board { gap: 9px; }
+
+  body.density-spacious .card { padding: 16px 18px; }
+  body.density-spacious .col-header { padding: 13px 16px; }
+  body.density-spacious .card-meta { gap: 5px; margin-bottom: 12px; }
+  body.density-spacious .column { gap: 12px; }
+  body.density-spacious .board { gap: 16px; }
+
+  /* ── Settings Panel ── */
+  .settings-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(4px);
+    z-index: 500;
+    display: flex;
+    justify-content: flex-end;
+    animation: fadeIn .15s ease;
+  }
+  .settings-panel {
+    background: var(--surface);
+    width: 340px;
+    max-width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    border-left: 1.5px solid var(--border);
+    box-shadow: -4px 0 32px rgba(0,0,0,.12);
+    display: flex;
+    flex-direction: column;
+    animation: slideLeft .2s ease;
+  }
+  @keyframes slideLeft { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .settings-header {
+    padding: 18px 20px;
+    border-bottom: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1rem;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+  .settings-body { padding: 0 20px 24px; flex: 1; }
+  .settings-section {
+    padding: 18px 0 0;
+  }
+  .settings-section + .settings-section { border-top: 1.5px solid var(--border); margin-top: 16px; padding-top: 18px; }
+  .settings-section-title {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .settings-row label { font-size: .875rem; color: var(--text2); font-weight: 500; }
+  .settings-row input[type=text] { max-width: 160px; }
+
+  /* Toggle switch */
+  .toggle { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .toggle input:checked + .toggle-track::after { transform: translateX(18px); }
+
+  /* Color swatches */
+  .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-swatch {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2.5px solid transparent;
+    transition: transform .12s, border-color .12s;
+  }
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.active { border-color: var(--text); transform: scale(1.15); }
+
+  /* Density pills */
+  .density-pills { display: flex; gap: 6px; }
+  .density-pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: .8rem;
+    font-weight: 600;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    color: var(--text2);
+    transition: all .12s;
+    background: transparent;
+  }
+  .density-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .density-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Column toggles */
+  .col-toggle-list { display: flex; flex-direction: column; gap: 8px; }
+  .col-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+  }
+  .col-toggle-name { font-size: .85rem; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; }
+
+  html[data-theme="dark"] .settings-panel,
+  html[data-theme="dark"] .settings-header { background: var(--surface) !important; }
+  html[data-theme="dark"] .col-toggle-row { background: var(--surface2) !important; }
+  html[data-theme="dark"] .density-pill { border-color: var(--border) !important; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">remi</div>
+    <span class="full" style="color:var(--text2);font-weight:500;font-size:.9rem;">NTP Tracker</span>
+  </div>
+  <div class="header-search">
+    <input type="text" id="searchInput" placeholder="🔍  Search by name..." autocomplete="off">
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" id="filterToggleBtn">⊟ Filters</button>
+    <button class="btn btn-ghost btn-sm" id="settingsBtn">⚙ Settings</button>
+    <button class="btn btn-primary" id="addDealBtn">+ New Deal</button>
+  </div>
+</header>
+
+<!-- Summary Bar -->
+<div class="summary-bar" id="summaryBar"></div>
+
+<!-- Filter Bar -->
+<div class="filter-bar" id="filterBar" style="display:none">
+  <label>FLAG:</label>
+  <div id="flagFilters"></div>
+  <label style="margin-left:8px">STAGE:</label>
+  <div id="stageFilters"></div>
+  <button class="btn btn-ghost btn-sm" id="clearFiltersBtn" style="margin-left:auto">Clear</button>
+</div>
+
+<!-- Board -->
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" style="display:none">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Add New Deal</div>
+      <button class="modal-close" id="modalCloseBtn">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="dealForm" autocomplete="off">
+        <input type="hidden" id="dealId">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label class="form-label">Homeowner Name *</label>
+            <input type="text" id="fName" placeholder="Jane Smith" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Closer</label>
+            <select id="fRep">
+              <option value="">— Select closer —</option>
+              <option>Nicolas Bellini</option>
+              <option>Caleb Hanssen</option>
+              <option>Christian Dimond</option>
+              <option>Coleman Hedberg</option>
+              <option>Maverick Quirante</option>
+              <option>Micah Belliston</option>
+              <option>Mick Eggertsen</option>
+              <option>Thomas Hendricks IV</option>
+              <option>Zander Quiring</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Install Date</label>
+            <input type="date" id="fInstall">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Day 1 Call Date</label>
+            <input type="date" id="fDay1Date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Day 4 Call Date</label>
+            <input type="date" id="fDay4Date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stage</label>
+            <select id="fStage"></select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">HubSpot Link</label>
+            <input type="url" id="fHubspot" placeholder="https://app.hubspot.com/contacts/...">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Notes</label>
+            <textarea id="fNotes" placeholder="Shingle color, HOA info, homeowner concerns..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Flags</label>
+            <div class="flags-grid" id="flagsGrid"></div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="deleteBtn" style="display:none">Delete</button>
+      <button class="btn btn-primary" id="saveBtn">Save Deal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Panel -->
+<div class="settings-overlay" id="settingsOverlay" style="display:none">
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-header">
+      <span>Settings</span>
+      <button class="modal-close" id="settingsCloseBtn">×</button>
+    </div>
+    <div class="settings-body">
+
+      <!-- Appearance -->
+      <div class="settings-section">
+        <div class="settings-section-title">Appearance</div>
+        <div class="settings-row">
+          <label>Dark Mode</label>
+          <label class="toggle">
+            <input type="checkbox" id="sDarkMode">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <label>Accent Color</label>
+          <div class="color-swatches" id="sColorSwatches">
+            <div class="color-swatch" data-color="#2BA5F0" data-dark="#1A8DD4" style="background:#2BA5F0" title="Remi Blue"></div>
+            <div class="color-swatch" data-color="#7C3AED" data-dark="#6D28D9" style="background:#7C3AED" title="Purple"></div>
+            <div class="color-swatch" data-color="#16A34A" data-dark="#15803D" style="background:#16A34A" title="Green"></div>
+            <div class="color-swatch" data-color="#EA580C" data-dark="#C2410C" style="background:#EA580C" title="Orange"></div>
+            <div class="color-swatch" data-color="#DB2777" data-dark="#BE185D" style="background:#DB2777" title="Pink"></div>
+            <div class="color-swatch" data-color="#0891B2" data-dark="#0E7490" style="background:#0891B2" title="Teal"></div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <label>Card Density</label>
+          <div class="density-pills">
+            <button class="density-pill" data-density="compact">Compact</button>
+            <button class="density-pill active" data-density="normal">Normal</button>
+            <button class="density-pill" data-density="spacious">Spacious</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <label>Column Width</label>
+          <div class="density-pills">
+            <button class="density-pill" data-width="120">Narrow</button>
+            <button class="density-pill active" data-width="140">Normal</button>
+            <button class="density-pill" data-width="170">Wide</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Defaults -->
+      <div class="settings-section">
+        <div class="settings-section-title">Defaults</div>
+        <div class="settings-row">
+          <label>Default Closer</label>
+          <select id="sDefaultRep" style="max-width:170px">
+            <option value="">— None —</option>
+            <option>Nicolas Bellini</option>
+            <option>Caleb Hanssen</option>
+            <option>Christian Dimond</option>
+            <option>Coleman Hedberg</option>
+            <option>Maverick Quirante</option>
+            <option>Micah Belliston</option>
+            <option>Mick Eggertsen</option>
+            <option>Thomas Hendricks IV</option>
+            <option>Zander Quiring</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <label>Default Stage</label>
+          <select id="sDefaultStage" style="max-width:160px"></select>
+        </div>
+      </div>
+
+      <!-- Pipeline -->
+      <div class="settings-section">
+        <div class="settings-section-title">Visible Columns</div>
+        <div class="col-toggle-list" id="sColToggles"></div>
+      </div>
+
+      <!-- Data -->
+      <div class="settings-section">
+        <div class="settings-section-title">Data</div>
+        <div class="settings-row">
+          <label style="flex:1">Auto-fill missing Day 4 dates</label>
+          <button class="btn btn-ghost btn-sm" id="sCalcDay4Btn">Apply</button>
+        </div>
+        <div class="settings-row">
+          <label style="flex:1">Export Day 4 calls to Calendar</label>
+          <button class="btn btn-ghost btn-sm" id="sExportIcsBtn">📅 .ics</button>
+        </div>
+        <div class="settings-row">
+          <label style="flex:1">Export all deals as JSON</label>
+          <button class="btn btn-ghost btn-sm" id="sExportBtn">Export</button>
+        </div>
+        <div class="settings-row">
+          <label style="flex:1"><strong>Share with boss</strong><br><span style="font-size:.75rem;color:var(--text3)">Downloads HTML with all deals baked in</span></label>
+          <button class="btn btn-primary btn-sm" id="sShareBtn">📤 Share</button>
+        </div>
+        <div class="settings-row">
+          <label style="flex:1;color:var(--danger)">Clear all deals</label>
+          <button class="btn btn-danger btn-sm" id="sClearBtn">Clear</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div class="ctx-menu" id="ctxMenu" style="display:none"></div>
+
+<script>
+// ────────────────────────────────────────────────
+//  CONFIG
+// ────────────────────────────────────────────────
+const COLUMNS = [
+  { id: 'new',          label: 'New' },
+  { id: 'no-answer',    label: 'No Answer' },
+  { id: 'day1',         label: 'Day 1 Complete' },
+  { id: 'incomplete',   label: 'Incomplete' },
+  { id: 'at-risk',      label: 'At Risk' },
+  { id: 'day4-pending', label: 'Day 4 Pending' },
+  { id: 'day4-complete',label: 'Day 4 Complete' },
+  { id: 'change-order', label: 'Change Order' },
+  { id: 'installed',    label: 'Installed' },
+];
+
+const FLAGS = [
+  { id: 'shingle',     label: 'Missing Shingle Color', cls: 'flag-shingle',     icon: '🎨' },
+  { id: 'cancel',      label: 'Cancellation Risk',     cls: 'flag-cancel',      icon: '⚠️' },
+  { id: 'unreachable', label: 'Unreachable Homeowner', cls: 'flag-unreachable', icon: '📵' },
+  { id: 'schedule',    label: 'Scheduling Conflict',   cls: 'flag-schedule',    icon: '📅' },
+  { id: 'changeorder', label: 'Change Order Compl.',   cls: 'flag-changeorder', icon: '📋' },
+  { id: 'permit',      label: 'Permit / HOA Hold',     cls: 'flag-permit',      icon: '🏛️' },
+  { id: 'decking',     label: 'Decking Concern',       cls: 'flag-decking',     icon: '🔨' },
+];
+
+const FLAG_MAP = Object.fromEntries(FLAGS.map(f => [f.id, f]));
+const COL_MAP  = Object.fromEntries(COLUMNS.map(c => [c.id, c]));
+
+// ────────────────────────────────────────────────
+//  STATE
+// ────────────────────────────────────────────────
+let deals = [];
+let activeFilters = { flags: new Set(), stages: new Set() };
+let searchQuery = '';
+let dragId = null;
+
+// ── Firebase ──
+const firebaseConfig = {
+  apiKey: "AIzaSyCeB4zN5ekLOu81IJ-NoTIcTDOITji1P-k",
+  authDomain: "ntp-tracker.firebaseapp.com",
+  databaseURL: "https://ntp-tracker-default-rtdb.firebaseio.com",
+  projectId: "ntp-tracker",
+  storageBucket: "ntp-tracker.firebasestorage.app",
+  messagingSenderId: "470420676924",
+  appId: "1:470420676924:web:88d1c03181da2ab5143e39"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function calcDay4(day1Iso) {
+  const d = new Date(day1Iso + 'T12:00:00');
+  d.setDate(d.getDate() + 3);
+  const dow = d.getDay();
+  if (dow === 6) d.setDate(d.getDate() + 2);
+  if (dow === 0) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function migrate(arr) {
+  arr.forEach(d => {
+    if (!d.day1Date && d.lastContact) d.day1Date = d.lastContact;
+    if (d.day1Date && !d.day4Date) d.day4Date = calcDay4(d.day1Date);
+  });
+  return arr;
+}
+
+function loadDeals() {
+  // Show cached data instantly while Firebase loads
+  try {
+    const cached = JSON.parse(localStorage.getItem('ntp_deals') || '[]');
+    if (cached.length) { deals = cached; render(); }
+  } catch(e) {}
+
+  // Live Firebase listener — updates board for ALL users in real-time
+  db.ref('deals').on('value', snapshot => {
+    const data = snapshot.val();
+    if (Array.isArray(data) && data.length) {
+      deals = migrate(data);
+    } else if (!data || !data.length) {
+      if (!deals.length) deals = migrate(seedData());
+      db.ref('deals').set(deals);
+    }
+    try { localStorage.setItem('ntp_deals', JSON.stringify(deals)); } catch(e) {}
+    render();
+  }, err => {
+    console.warn('Firebase error, using local data:', err);
+    if (!deals.length) { deals = migrate(seedData()); render(); }
+  });
+}
+
+function saveDeals() {
+  try { localStorage.setItem('ntp_deals', JSON.stringify(deals)); } catch(e) {}
+  db.ref('deals').set(deals).catch(e => console.warn('Firebase save failed:', e));
+}
+function seedData() {
+  return [
+    { id: uid(), stage: 'day1',       name: 'Joseph Lockett',   phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: '',                                                                           flags: [],           touches: [] },
+    { id: uid(), stage: 'day1',       name: 'William McGowan',  phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: '',                                                                           flags: [],           touches: [] },
+    { id: uid(), stage: 'day1',       name: 'Tony Shaw',        phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: 'Shingle: Dual Brown',                                                        flags: [],           touches: [] },
+    { id: uid(), stage: 'day1',       name: 'Patty Padgett',    phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: 'Decking risk noted.',                                                         flags: ['decking'],  touches: [] },
+    { id: uid(), stage: 'day1',       name: 'Julia Moore',      phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: '',                                                                           flags: [],           touches: [] },
+    { id: uid(), stage: 'day1',       name: 'Pat Fish',         phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: 'Docs resent per request.',                                                   flags: [],           touches: [] },
+    { id: uid(), stage: 'day1',       name: 'Elman Frias',      phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: 'Works 12hr shifts — call or text.',                                          flags: [],           touches: [] },
+    { id: uid(), stage: 'day1',       name: 'John Imes',        phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: '',                                                                           flags: [],           touches: [] },
+    { id: uid(), stage: 'no-answer',  name: 'Thomas Carrier',   phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: '',                                                                           flags: [],           touches: [] },
+    { id: uid(), stage: 'incomplete', name: 'Mildred Alicea',   phone: '', rep: '', install: '', day1Date: '2026-06-03', day4Date: '', lastContact: '2026-06-03', notes: 'Son Alex answered, samples sent. Shingle color still pending.',               flags: ['shingle'],  touches: [] },
+    { id: uid(), stage: 'day1',       name: 'Nora Gonzales',    phone: '', rep: '', install: '', day1Date: '2026-06-04', day4Date: '', lastContact: '2026-06-04', notes: '',                                                                           flags: [],           touches: [] },
+    { id: uid(), stage: 'day1',       name: 'Charliee Yates',   phone: '', rep: '', install: '', day1Date: '2026-06-04', day4Date: '', lastContact: '2026-06-04', notes: 'Shingle: Dual Gray. May not answer — will call back.',                       flags: [],           touches: [] },
+    { id: uid(), stage: 'no-answer',  name: 'John Moats',       phone: '', rep: '', install: '', day1Date: '2026-06-04', day4Date: '', lastContact: '2026-06-04', notes: 'Voicemail left.',                                                            flags: [],           touches: [] },
+    { id: uid(), stage: 'at-risk',    name: 'Dave Erno',        phone: '', rep: '', install: '', day1Date: '2026-06-04', day4Date: '', lastContact: '2026-06-04', notes: 'Interest rate concern, scope unconfirmed. Scotty notified.',                  flags: ['cancel'],   touches: [] },
+    { id: uid(), stage: 'no-answer',  name: 'Gene Birch',       phone: '', rep: '', install: '', day1Date: '2026-06-04', day4Date: '', lastContact: '2026-06-04', notes: 'Voicemail left.',                                                            flags: [],           touches: [] },
+    { id: uid(), stage: 'day1',       name: 'Walter Cope',      phone: '', rep: '', install: '', day1Date: '2026-06-04', day4Date: '', lastContact: '2026-06-04', notes: 'Shingle: Harvard Slate. Chimney exhaust vent question pending — sent to OPS.', flags: [],          touches: [] },
+  ];
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  return `${m}/${d}/${y.slice(2)}`;
+}
+function fmtNow() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+}
+
+// ────────────────────────────────────────────────
+//  RENDER
+// ────────────────────────────────────────────────
+function filteredDeals() {
+  const q = searchQuery.toLowerCase().trim();
+  return deals.filter(d => {
+    if (q && !d.name.toLowerCase().includes(q)) return false;
+    if (activeFilters.stages.size && !activeFilters.stages.has(d.stage)) return false;
+    if (activeFilters.flags.size) {
+      if (!d.flags || !d.flags.some(f => activeFilters.flags.has(f))) return false;
+    }
+    return true;
+  });
+}
+
+function render() {
+  renderSummary();
+  renderBoard();
+  renderFilters();
+}
+
+function renderSummary() {
+  const bar = document.getElementById('summaryBar');
+  const total = deals.length;
+  const atRisk = deals.filter(d => d.stage === 'at-risk' || (d.flags && d.flags.includes('cancel'))).length;
+  const installed = deals.filter(d => d.stage === 'installed').length;
+  const flagged = deals.filter(d => d.flags && d.flags.length).length;
+
+  let html = `<div class="stat-chip"><span class="count">${total}</span><span class="label">Total</span></div>`;
+  COLUMNS.forEach(col => {
+    const cnt = deals.filter(d => d.stage === col.id).length;
+    if (cnt === 0 && col.id !== 'new') return;
+    html += `<div class="stat-chip"><span class="count">${cnt}</span><span class="label">${col.label}</span></div>`;
+  });
+  html += `<div class="stat-chip" style="border-color:rgba(239,68,68,.4)"><span class="count" style="color:var(--danger)">${atRisk}</span><span class="label">At Risk</span></div>`;
+  html += `<div class="stat-chip" style="border-color:rgba(245,158,11,.4)"><span class="count" style="color:var(--warning)">${flagged}</span><span class="label">Flagged</span></div>`;
+  bar.innerHTML = html;
+}
+
+function renderFilters() {
+  const ff = document.getElementById('flagFilters');
+  ff.innerHTML = FLAGS.map(f => {
+    const active = activeFilters.flags.has(f.id);
+    return `<button class="filter-chip ${active ? 'active ' + f.cls : ''}" data-ftype="flag" data-val="${f.id}">${f.icon} ${f.label}</button>`;
+  }).join('');
+
+  const sf = document.getElementById('stageFilters');
+  sf.innerHTML = COLUMNS.map(c => {
+    const active = activeFilters.stages.has(c.id);
+    return `<button class="filter-chip ${active ? 'active' : ''}" data-ftype="stage" data-val="${c.id}" style="${active ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : ''}">${c.label}</button>`;
+  }).join('');
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  const visible = filteredDeals();
+  const byStage = {};
+  COLUMNS.forEach(c => byStage[c.id] = []);
+  visible.forEach(d => { if (byStage[d.stage]) byStage[d.stage].push(d); });
+
+  board.innerHTML = '';
+  const collapsedCols = JSON.parse(localStorage.getItem('ntp_collapsed') || '[]');
+
+  COLUMNS.forEach(col => {
+    const colDeals = byStage[col.id];
+    const colEl = document.createElement('div');
+    const isCollapsed = collapsedCols.includes(col.id);
+    colEl.className = 'column' + (isCollapsed ? ' collapsed' : '');
+    colEl.dataset.col = col.id;
+
+    let cardsHtml = colDeals.length === 0
+      ? `<div class="empty-col">Drop here or<br>add a new deal</div>`
+      : colDeals.map(d => cardHtml(d)).join('');
+
+    colEl.innerHTML = `
+      <div class="col-header">
+        <div class="col-title"><span class="col-dot"></span>${col.label}</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="col-count">${colDeals.length}</span>
+          <button class="col-collapse-btn" data-colid="${col.id}" title="Collapse">▾</button>
+        </div>
+      </div>
+      <div class="cards-area" data-col="${col.id}">${cardsHtml}</div>`;
+
+    board.appendChild(colEl);
+  });
+
+  // collapse toggle handlers
+  document.querySelectorAll('.col-collapse-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const colEl = btn.closest('.column');
+      colEl.classList.toggle('collapsed');
+      const id = btn.dataset.colid;
+      const collapsed = JSON.parse(localStorage.getItem('ntp_collapsed') || '[]');
+      const idx = collapsed.indexOf(id);
+      if (idx === -1) collapsed.push(id);
+      else collapsed.splice(idx, 1);
+      try { localStorage.setItem('ntp_collapsed', JSON.stringify(collapsed)); } catch(e) {}
+    });
+  });
+
+  attachCardListeners();
+  attachDropZones();
+}
+
+function cardHtml(d) {
+  const isAtRisk = d.stage === 'at-risk' || (d.flags && d.flags.includes('cancel'));
+  const hasFlags = d.flags && d.flags.length > 0;
+  let cls = 'card';
+  if (isAtRisk) cls += ' at-risk';
+  else if (hasFlags) cls += ' has-flags';
+
+  const flagBadges = (d.flags||[]).map(fid => {
+    const f = FLAG_MAP[fid];
+    return f ? `<span class="flag-badge ${f.cls}">${f.icon} ${f.label}</span>` : '';
+  }).join('');
+
+  const recentTouches = (d.touches||[]).slice(-2).reverse();
+  const touchHtml = recentTouches.length
+    ? `<div class="touch-log">${recentTouches.map(t =>
+        `<div class="touch-entry"><span class="touch-ts">📞 ${t.ts}</span><span>${escHtml(t.note)}</span></div>`
+      ).join('')}</div>`
+    : '';
+
+  const logRowId = `log-row-${d.id}`;
+
+  return `<div class="${cls}" draggable="true" data-id="${d.id}">
+    <div class="card-header">
+      <div>
+        <div class="card-name">${escHtml(d.name)}</div>
+        ${d.rep ? `<div class="card-rep">${escHtml(d.rep)}</div>` : ''}
+      </div>
+      <button class="card-menu-btn" data-menu="${d.id}" title="Options">⋯</button>
+    </div>
+    <div class="card-meta">
+      <span><span class="ico">📋</span>Day 1: <span class="${d.day1Date ? '' : 'date-empty'}">${d.day1Date ? fmtDate(d.day1Date) : '—'}</span></span>
+      <span><span class="ico">📅</span>Day 4: <span class="${d.day4Date ? '' : 'date-empty'}">${d.day4Date ? fmtDate(d.day4Date) : '—'}</span></span>
+      ${d.install  ? `<span><span class="ico">🏠</span>Install: ${fmtDate(d.install)}</span>` : ''}
+    </div>
+    ${d.hubspot ? `<a class="hubspot-link" href="${d.hubspot}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🔗 HubSpot</a>` : ''}
+    ${d.notes ? `<div class="card-notes">${escHtml(d.notes)}</div>` : ''}
+    ${flagBadges ? `<div class="card-flags">${flagBadges}</div>` : ''}
+    ${touchHtml}
+    <div id="${logRowId}" class="touch-log-input-row" style="display:none">
+      <input type="text" placeholder="Log a call note..." id="log-input-${d.id}">
+      <button onclick="addTouch('${d.id}')">Log</button>
+    </div>
+    <div class="card-footer">
+      <span class="last-contact"></span>
+      <div class="card-actions">
+        <button class="card-action-btn log-btn" onclick="toggleLogRow('${d.id}')">+ Note</button>
+        <button class="card-action-btn" data-edit="${d.id}">Edit</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ────────────────────────────────────────────────
+//  CARD INTERACTIONS
+// ────────────────────────────────────────────────
+function attachCardListeners() {
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      dragId = card.dataset.id;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      dragId = null;
+    });
+  });
+
+  document.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openEdit(btn.dataset.edit); });
+  });
+
+  document.querySelectorAll('[data-menu]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); showCtxMenu(e, btn.dataset.menu); });
+  });
+}
+
+function attachDropZones() {
+  document.querySelectorAll('.cards-area').forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (!dragId) return;
+      const targetCol = zone.dataset.col;
+      const deal = deals.find(d => d.id === dragId);
+      if (deal && deal.stage !== targetCol) {
+        deal.stage = targetCol;
+        deal.lastContact = new Date().toISOString().slice(0,10);
+        saveDeals();
+        render();
+        toast(`Moved to ${COL_MAP[targetCol]?.label}`, 'success');
+      }
+    });
+  });
+}
+
+function toggleLogRow(id) {
+  const row = document.getElementById(`log-row-${id}`);
+  if (!row) return;
+  const visible = row.style.display !== 'none';
+  row.style.display = visible ? 'none' : 'flex';
+  if (!visible) document.getElementById(`log-input-${id}`)?.focus();
+}
+
+function addTouch(id) {
+  const inp = document.getElementById(`log-input-${id}`);
+  if (!inp || !inp.value.trim()) return;
+  const deal = deals.find(d => d.id === id);
+  if (!deal) return;
+  if (!deal.touches) deal.touches = [];
+  deal.touches.push({ ts: fmtNow(), note: inp.value.trim() });
+  deal.lastContact = new Date().toISOString().slice(0,10);
+  saveDeals();
+  render();
+  toast('Call note logged', 'info');
+}
+
+// ────────────────────────────────────────────────
+//  CONTEXT MENU
+// ────────────────────────────────────────────────
+function showCtxMenu(e, dealId) {
+  const menu = document.getElementById('ctxMenu');
+  const deal = deals.find(d => d.id === dealId);
+  if (!deal) return;
+
+  const stageMoves = COLUMNS.filter(c => c.id !== deal.stage).slice(0,5)
+    .map(c => `<div class="ctx-item" data-action="move" data-col="${c.id}" data-did="${dealId}">→ ${c.label}</div>`)
+    .join('');
+
+  menu.innerHTML = `
+    <div class="ctx-item" data-action="edit" data-did="${dealId}">✏️ Edit Deal</div>
+    <div class="ctx-sep"></div>
+    ${stageMoves}
+    <div class="ctx-sep"></div>
+    <div class="ctx-item danger" data-action="delete" data-did="${dealId}">🗑 Delete</div>`;
+
+  menu.style.display = 'block';
+  const x = Math.min(e.clientX, window.innerWidth - 200);
+  const y = Math.min(e.clientY, window.innerHeight - 260);
+  menu.style.left = x + 'px';
+  menu.style.top  = y + 'px';
+
+  menu.querySelectorAll('.ctx-item').forEach(item => {
+    item.addEventListener('click', () => {
+      closeCtxMenu();
+      const act = item.dataset.action;
+      if (act === 'edit') openEdit(item.dataset.did);
+      else if (act === 'delete') deleteDeal(item.dataset.did);
+      else if (act === 'move') {
+        const d = deals.find(x => x.id === item.dataset.did);
+        if (d) { d.stage = item.dataset.col; saveDeals(); render(); toast(`Moved to ${COL_MAP[item.dataset.col]?.label}`, 'success'); }
+      }
+    });
+  });
+}
+function closeCtxMenu() { document.getElementById('ctxMenu').style.display = 'none'; }
+document.addEventListener('click', closeCtxMenu);
+
+// ────────────────────────────────────────────────
+//  MODAL
+// ────────────────────────────────────────────────
+function buildFlagsGrid(selected=[]) {
+  const grid = document.getElementById('flagsGrid');
+  grid.innerHTML = FLAGS.map(f => {
+    const checked = selected.includes(f.id);
+    return `<label class="flag-checkbox ${checked ? 'checked ' + f.cls : ''}" data-fid="${f.id}" style="${checked ? 'border-color:currentColor' : ''}">
+      <input type="checkbox" value="${f.id}" ${checked ? 'checked' : ''}>
+      <span class="flag-dot" style="background:currentColor"></span>
+      ${f.icon} ${f.label}
+    </label>`;
+  }).join('');
+
+  grid.querySelectorAll('label').forEach(lbl => {
+    lbl.addEventListener('click', () => {
+      const cb = lbl.querySelector('input');
+      const f = FLAG_MAP[lbl.dataset.fid];
+      if (cb.checked) { lbl.classList.add('checked', f.cls); lbl.style.borderColor = 'currentColor'; }
+      else { lbl.classList.remove('checked', f.cls); lbl.style.borderColor = ''; }
+    });
+  });
+}
+
+function buildStageSelect(selected='new') {
+  const sel = document.getElementById('fStage');
+  sel.innerHTML = COLUMNS.map(c => `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${c.label}</option>`).join('');
+}
+
+function openAdd() {
+  document.getElementById('modalTitle').textContent = 'Add New Deal';
+  document.getElementById('dealId').value = '';
+  document.getElementById('dealForm').reset();
+  buildStageSelect('new');
+  buildFlagsGrid([]);
+  document.getElementById('deleteBtn').style.display = 'none';
+  openModal();
+}
+
+function openEdit(id) {
+  const d = deals.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('modalTitle').textContent = 'Edit Deal';
+  document.getElementById('dealId').value = d.id;
+  document.getElementById('fName').value = d.name || '';
+  document.getElementById('fRep').value = d.rep || '';
+  document.getElementById('fDay1Date').value = d.day1Date || '';
+  document.getElementById('fDay4Date').value = d.day4Date || '';
+  document.getElementById('fInstall').value = d.install || '';
+  document.getElementById('fHubspot').value = d.hubspot || '';
+  document.getElementById('fNotes').value = d.notes || '';
+  buildStageSelect(d.stage);
+  buildFlagsGrid(d.flags || []);
+  document.getElementById('deleteBtn').style.display = 'inline-flex';
+  openModal();
+}
+
+function openModal() {
+  document.getElementById('modalOverlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('fName').focus(), 100);
+}
+function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+
+function saveDeal() {
+  const id = document.getElementById('dealId').value;
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { document.getElementById('fName').focus(); return; }
+
+  const flags = Array.from(document.querySelectorAll('#flagsGrid input[type=checkbox]:checked')).map(c => c.value);
+
+  const data = {
+    name,
+    rep:         document.getElementById('fRep').value.trim(),
+    day1Date:    document.getElementById('fDay1Date').value,
+    day4Date:    document.getElementById('fDay4Date').value,
+    install:     document.getElementById('fInstall').value,
+    hubspot:     document.getElementById('fHubspot').value.trim(),
+    stage:       document.getElementById('fStage').value,
+    notes:       document.getElementById('fNotes').value.trim(),
+    flags,
+  };
+
+  if (id) {
+    const i = deals.findIndex(d => d.id === id);
+    if (i !== -1) { deals[i] = { ...deals[i], ...data }; }
+  } else {
+    deals.unshift({ id: uid(), touches: [], ...data });
+  }
+  saveDeals();
+  render();
+  closeModal();
+  toast(id ? 'Deal updated' : 'Deal added', 'success');
+}
+
+function deleteDeal(id) {
+  if (!confirm('Delete this deal? This cannot be undone.')) return;
+  deals = deals.filter(d => d.id !== id);
+  saveDeals();
+  render();
+  closeModal();
+  toast('Deal deleted', 'info');
+}
+
+// ────────────────────────────────────────────────
+//  FILTERS
+// ────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  render();
+});
+
+document.getElementById('filterToggleBtn').addEventListener('click', () => {
+  const fb = document.getElementById('filterBar');
+  fb.style.display = fb.style.display === 'none' ? 'flex' : 'none';
+});
+
+document.getElementById('flagFilters').addEventListener('click', e => {
+  const btn = e.target.closest('[data-ftype=flag]');
+  if (!btn) return;
+  const v = btn.dataset.val;
+  if (activeFilters.flags.has(v)) activeFilters.flags.delete(v);
+  else activeFilters.flags.add(v);
+  render();
+});
+document.getElementById('stageFilters').addEventListener('click', e => {
+  const btn = e.target.closest('[data-ftype=stage]');
+  if (!btn) return;
+  const v = btn.dataset.val;
+  if (activeFilters.stages.has(v)) activeFilters.stages.delete(v);
+  else activeFilters.stages.add(v);
+  render();
+});
+document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+  activeFilters.flags.clear();
+  activeFilters.stages.clear();
+  render();
+});
+
+// ────────────────────────────────────────────────
+//  TOAST
+// ────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+// ────────────────────────────────────────────────
+//  WIRING
+// ────────────────────────────────────────────────
+document.getElementById('addDealBtn').addEventListener('click', openAdd);
+document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('saveBtn').addEventListener('click', saveDeal);
+document.getElementById('deleteBtn').addEventListener('click', () => {
+  const id = document.getElementById('dealId').value;
+  if (id) deleteDeal(id);
+});
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+document.getElementById('dealForm').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); saveDeal(); }
+});
+
+// Auto-fill Day 4 = Day 1 + 3 days, skip to Monday if weekend
+document.getElementById('fDay1Date').addEventListener('change', e => {
+  const day4Field = document.getElementById('fDay4Date');
+  if (!e.target.value || day4Field.value) return; // don't overwrite if already set
+  day4Field.value = calcDay4(e.target.value);
+});
+
+// Touch drag support for mobile
+let touchDragId = null, touchClone = null;
+
+document.addEventListener('touchstart', e => {
+  const card = e.target.closest('.card');
+  if (!card) return;
+  const btn = e.target.closest('button');
+  if (btn) return;
+  touchDragId = card.dataset.id;
+  const rect = card.getBoundingClientRect();
+  touchClone = card.cloneNode(true);
+  touchClone.style.cssText = `position:fixed;width:${rect.width}px;opacity:.7;pointer-events:none;z-index:999;top:${rect.top}px;left:${rect.left}px;transform:scale(.97);border-radius:10px;`;
+  document.body.appendChild(touchClone);
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!touchDragId || !touchClone) return;
+  const t = e.touches[0];
+  touchClone.style.top = (t.clientY - 30) + 'px';
+  touchClone.style.left = (t.clientX - 80) + 'px';
+  document.querySelectorAll('.cards-area').forEach(z => z.classList.remove('drag-over'));
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const zone = el?.closest('.cards-area');
+  if (zone) zone.classList.add('drag-over');
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  if (!touchDragId) return;
+  if (touchClone) { touchClone.remove(); touchClone = null; }
+  document.querySelectorAll('.cards-area').forEach(z => z.classList.remove('drag-over'));
+  const t = e.changedTouches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const zone = el?.closest('.cards-area');
+  if (zone) {
+    const targetCol = zone.dataset.col;
+    const deal = deals.find(d => d.id === touchDragId);
+    if (deal && deal.stage !== targetCol) {
+      deal.stage = targetCol;
+      deal.lastContact = new Date().toISOString().slice(0,10);
+      saveDeals();
+      render();
+      toast(`Moved to ${COL_MAP[targetCol]?.label}`, 'success');
+    }
+  }
+  touchDragId = null;
+}, { passive: true });
+
+// ────────────────────────────────────────────────
+//  SETTINGS
+// ────────────────────────────────────────────────
+const DEFAULT_SETTINGS = {
+  theme: 'light',
+  accent: '#2BA5F0',
+  accentDark: '#1A8DD4',
+  density: 'normal',
+  colWidth: 140,
+  defaultRep: '',
+  defaultStage: 'new',
+  hiddenCols: [],
+};
+let settings = { ...DEFAULT_SETTINGS };
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('ntp_settings') || 'null');
+    if (s) settings = { ...DEFAULT_SETTINGS, ...s };
+  } catch(e) {}
+}
+function saveSettings() {
+  try { localStorage.setItem('ntp_settings', JSON.stringify(settings)); } catch(e) {}
+}
+
+function applySettings() {
+  const html = document.documentElement;
+  // theme
+  html.dataset.theme = settings.theme;
+  // accent color
+  html.style.setProperty('--accent', settings.accent);
+  html.style.setProperty('--accent-dark', settings.accentDark);
+  html.style.setProperty('--accent2', settings.accentDark);
+  // density
+  document.body.classList.remove('density-compact','density-normal','density-spacious');
+  if (settings.density !== 'normal') document.body.classList.add('density-' + settings.density);
+  // column min-width (columns flex-fill the viewport; min-width sets the floor)
+  document.querySelectorAll('.column').forEach(c => c.style.minWidth = settings.colWidth + 'px');
+}
+
+function openSettings() {
+  const overlay = document.getElementById('settingsOverlay');
+  overlay.style.display = 'flex';
+
+  // sync controls
+  document.getElementById('sDarkMode').checked = settings.theme === 'dark';
+
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.color === settings.accent);
+  });
+
+  document.querySelectorAll('[data-density]').forEach(b => {
+    b.classList.toggle('active', b.dataset.density === settings.density);
+  });
+  document.querySelectorAll('[data-width]').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.width) === settings.colWidth);
+  });
+
+  document.getElementById('sDefaultRep').value = settings.defaultRep || '';
+
+  // default stage select
+  const dsSel = document.getElementById('sDefaultStage');
+  dsSel.innerHTML = COLUMNS.map(c => `<option value="${c.id}" ${c.id === settings.defaultStage ? 'selected' : ''}>${c.label}</option>`).join('');
+
+  // column toggles
+  const list = document.getElementById('sColToggles');
+  list.innerHTML = COLUMNS.map(col => {
+    const hidden = settings.hiddenCols.includes(col.id);
+    return `<div class="col-toggle-row">
+      <span class="col-toggle-name">
+        <span class="col-dot" style="background:${colColor(col.id)};width:8px;height:8px;border-radius:50%;display:inline-block"></span>
+        ${col.label}
+      </span>
+      <label class="toggle">
+        <input type="checkbox" data-colid="${col.id}" ${hidden ? '' : 'checked'} class="col-vis-toggle">
+        <span class="toggle-track"></span>
+      </label>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.col-vis-toggle').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = cb.dataset.colid;
+      if (cb.checked) settings.hiddenCols = settings.hiddenCols.filter(c => c !== id);
+      else if (!settings.hiddenCols.includes(id)) settings.hiddenCols.push(id);
+      saveSettings(); render();
+    });
+  });
+}
+
+function colColor(id) {
+  const map = {
+    'new': settings.accent, 'no-answer': '#9AA3BD', 'day1': '#16A34A',
+    'incomplete': '#D97706', 'at-risk': '#DC2626', 'day4-pending': '#0284C7',
+    'day4-complete': '#059669', 'change-order': '#7C3AED', 'installed': '#059669'
+  };
+  return map[id] || '#9AA3BD';
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').style.display = 'none';
+}
+
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('settingsCloseBtn').addEventListener('click', closeSettings);
+document.getElementById('settingsOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
+});
+
+document.getElementById('sDarkMode').addEventListener('change', e => {
+  settings.theme = e.target.checked ? 'dark' : 'light';
+  saveSettings(); applySettings();
+});
+
+document.getElementById('sColorSwatches').addEventListener('click', e => {
+  const sw = e.target.closest('.color-swatch');
+  if (!sw) return;
+  settings.accent = sw.dataset.color;
+  settings.accentDark = sw.dataset.dark;
+  saveSettings(); applySettings();
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('active', s === sw));
+});
+
+document.querySelectorAll('[data-density]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    settings.density = btn.dataset.density;
+    saveSettings(); applySettings();
+    document.querySelectorAll('[data-density]').forEach(b => b.classList.toggle('active', b === btn));
+  });
+});
+
+document.querySelectorAll('[data-width]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    settings.colWidth = Number(btn.dataset.width);
+    saveSettings(); applySettings();
+    document.querySelectorAll('[data-width]').forEach(b => b.classList.toggle('active', b === btn));
+  });
+});
+
+document.getElementById('sDefaultRep').addEventListener('change', e => {
+  settings.defaultRep = e.target.value;
+  saveSettings();
+});
+
+document.getElementById('sDefaultStage').addEventListener('change', e => {
+  settings.defaultStage = e.target.value;
+  saveSettings();
+});
+
+document.getElementById('sExportIcsBtn').addEventListener('click', () => {
+  const withDay4 = deals.filter(d => d.day4Date);
+  if (!withDay4.length) { toast('No Day 4 dates to export', 'info'); return; }
+
+  const pad = n => String(n).padStart(2, '0');
+  function toIcsDate(iso) {
+    const [y, m, day] = iso.split('-');
+    return `${y}${m}${day}`;
+  }
+  function toIcsDateNext(iso) {
+    const d = new Date(iso + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+  }
+
+  const events = withDay4.map(d => {
+    const stamp = toIcsDate(new Date().toISOString().slice(0,10));
+    const uid = `day4-${d.id}@ntp-tracker`;
+    const notes = d.notes ? d.notes.replace(/\n/g,'\\n') : '';
+    const closer = d.rep ? `Closer: ${d.rep}\\n` : '';
+    return [
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${stamp}T120000Z`,
+      `DTSTART;VALUE=DATE:${toIcsDate(d.day4Date)}`,
+      `DTEND;VALUE=DATE:${toIcsDateNext(d.day4Date)}`,
+      `SUMMARY:Day 4 Call – ${d.name}`,
+      `DESCRIPTION:${closer}${notes}`,
+      'END:VEVENT'
+    ].join('\r\n');
+  }).join('\r\n');
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//NTP Tracker//Remi Roofing//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    events,
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ntp-day4-calls.ics';
+  a.click();
+  toast(`Exported ${withDay4.length} Day 4 calls`, 'success');
+});
+
+document.getElementById('sCalcDay4Btn').addEventListener('click', () => {
+  let count = 0;
+  deals.forEach(d => {
+    if (d.day1Date) { d.day4Date = calcDay4(d.day1Date); count++; }
+  });
+  saveDeals(); render();
+  toast(`Day 4 dates applied to ${count} deal${count !== 1 ? 's' : ''}`, 'success');
+});
+
+document.getElementById('sShareBtn').addEventListener('click', () => {
+  // Get the current HTML source
+  const src = document.documentElement.outerHTML;
+
+  // Replace seedData() with the current deals baked in
+  const dealsJson = JSON.stringify(deals, null, 2);
+  const newSeed = `function seedData() {\n  return ${dealsJson};\n}`;
+  const updated = src.replace(/function seedData\(\)\s*\{[\s\S]*?\n\}/, newSeed);
+
+  const blob = new Blob([updated], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ntp-tracker-shared.html';
+  a.click();
+  toast('Shareable file downloaded!', 'success');
+});
+
+document.getElementById('sExportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(deals, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ntp-deals-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  toast('Deals exported', 'success');
+});
+
+document.getElementById('sClearBtn').addEventListener('click', () => {
+  if (!confirm('Delete ALL deals? This cannot be undone.')) return;
+  deals = [];
+  saveDeals(); render(); closeSettings();
+  toast('All deals cleared', 'info');
+});
+
+// Patch openAdd to use default rep + stage
+const _origOpenAdd = openAdd;
+openAdd = function() {
+  _origOpenAdd();
+  if (settings.defaultRep) document.getElementById('fRep').value = settings.defaultRep;
+  buildStageSelect(settings.defaultStage || 'new');
+};
+
+// Patch render to respect hidden columns
+const _origRender = render;
+render = function() {
+  _origRender();
+  if (settings.hiddenCols && settings.hiddenCols.length) {
+    settings.hiddenCols.forEach(id => {
+      document.querySelectorAll(`.column[data-col="${id}"]`).forEach(el => el.style.display = 'none');
+    });
+  }
+  applySettings();
+};
+
+// ────────────────────────────────────────────────
+//  INIT
+// ────────────────────────────────────────────────
+loadSettings();
+loadDeals();
+render();
+</script>
+</body>
+</html>
