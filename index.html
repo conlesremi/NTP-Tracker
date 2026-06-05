@@ -1036,6 +1036,10 @@
       <div class="settings-section">
         <div class="settings-section-title">Data</div>
         <div class="settings-row">
+          <label style="flex:1"><strong>Push my data to cloud</strong><br><span style="font-size:.75rem;color:var(--text3)">Uploads your local deals to sync everyone</span></label>
+          <button class="btn btn-primary btn-sm" id="sPushCloudBtn">⬆ Push</button>
+        </div>
+        <div class="settings-row">
           <label style="flex:1">Auto-fill missing Day 4 dates</label>
           <button class="btn btn-ghost btn-sm" id="sCalcDay4Btn">Apply</button>
         </div>
@@ -1884,6 +1888,13 @@ document.getElementById('sExportIcsBtn').addEventListener('click', () => {
   a.download = 'ntp-day4-calls.ics';
   a.click();
   toast(`Exported ${withDay4.length} Day 4 calls`, 'success');
+});
+
+document.getElementById('sPushCloudBtn').addEventListener('click', () => {
+  if (!confirm(`Push ${deals.length} deals to the cloud? This will overwrite what everyone else sees.`)) return;
+  db.ref('deals').set(deals)
+    .then(() => toast(`✅ ${deals.length} deals pushed to cloud!`, 'success'))
+    .catch(() => toast('Push failed — check connection', 'info'));
 });
 
 document.getElementById('sCalcDay4Btn').addEventListener('click', () => {
