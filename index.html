@@ -103,6 +103,47 @@
     flex: 1;
     max-width: 280px;
   }
+  .header-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+  }
+  .today-date {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  .call-today-btn {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    color: var(--text2);
+    font-weight: 700;
+    font-size: .78rem;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    letter-spacing: .3px;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .call-today-btn:hover { border-color: var(--success); color: var(--success); background: rgba(22,163,74,.06); }
+  .call-today-btn.active { background: var(--success); color: #fff; border-color: var(--success); box-shadow: 0 2px 8px rgba(22,163,74,.3); }
+  .call-today-badge {
+    background: rgba(255,255,255,.25);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: .75rem;
+    font-weight: 800;
+  }
+  .call-today-btn:not(.active) .call-today-badge {
+    background: var(--surface3);
+    color: var(--text);
+  }
   .header-search input {
     padding: 7px 12px;
     font-size: .85rem;
@@ -935,6 +976,10 @@
   <div class="header-search">
     <input type="text" id="searchInput" placeholder="🔍  Search by name..." autocomplete="off">
   </div>
+  <div class="header-center">
+    <span class="today-date" id="todayDate"></span>
+    <button class="call-today-btn" id="callTodayBtn">📞 CALL TODAY <span class="call-today-badge" id="callTodayCount">0</span></button>
+  </div>
   <div class="header-actions">
     <button class="btn btn-ghost btn-sm" id="filterToggleBtn">⊟ Filters</button>
     <button class="btn btn-ghost btn-sm" id="settingsBtn">⚙ Settings</button>
@@ -1184,6 +1229,8 @@ let deals = [];
 let activeFilters = { flags: new Set(), stages: new Set() };
 let searchQuery = '';
 let dragId = null;
+let callTodayActive = false;
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
 
 // ── Firebase ──
 const firebaseConfig = {
@@ -1300,6 +1347,7 @@ function filteredDeals() {
     if (activeFilters.flags.size) {
       if (!d.flags || !d.flags.some(f => activeFilters.flags.has(f))) return false;
     }
+    if (callTodayActive && d.day4Date !== TODAY_ISO) return false;
     return true;
   });
 }
@@ -1311,6 +1359,13 @@ function render() {
 }
 
 function renderSummary() {
+  // Update call-today badge count
+  const todayCount = deals.filter(d => d.day4Date === TODAY_ISO).length;
+  const badge = document.getElementById('callTodayCount');
+  if (badge) badge.textContent = todayCount;
+  const ctBtn = document.getElementById('callTodayBtn');
+  if (ctBtn) ctBtn.classList.toggle('active', callTodayActive);
+
   const bar = document.getElementById('summaryBar');
   const total = deals.length;
   const atRisk = deals.filter(d => d.stage === 'at-risk' || (d.flags && d.flags.includes('cancel'))).length;
@@ -1728,6 +1783,23 @@ function toast(msg, type='info') {
 // ────────────────────────────────────────────────
 //  WIRING
 // ────────────────────────────────────────────────
+// Today's date display
+(function() {
+  const d = new Date(TODAY_ISO + 'T12:00:00');
+  const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const el = document.getElementById('todayDate');
+  if (el) el.textContent = label;
+})();
+
+document.getElementById('callTodayBtn').addEventListener('click', () => {
+  callTodayActive = !callTodayActive;
+  render();
+  if (callTodayActive) {
+    const n = deals.filter(d => d.day4Date === TODAY_ISO).length;
+    toast(n ? `Showing ${n} Day 4 call${n !== 1 ? 's' : ''} due today` : 'No Day 4 calls due today', n ? 'success' : 'info');
+  }
+});
+
 document.getElementById('addDealBtn').addEventListener('click', openAdd);
 document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
