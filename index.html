@@ -697,39 +697,19 @@
     background: #fff;
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 7px 10px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
     cursor: grab;
     transition: box-shadow .12s, border-color .12s;
     user-select: none;
   }
-  .list-item:hover { box-shadow: var(--shadow-sm); border-color: #c5cfe0; }
+  .list-item:hover { box-shadow: var(--shadow-sm); border-color: #c5cfe0; background: var(--surface2); }
   .list-item.dragging { opacity: .45; cursor: grabbing; }
   .list-item.at-risk { border-left: 3px solid var(--danger); }
   .list-item.has-flags { border-left: 3px solid var(--warning); }
   .list-item.at-risk.has-flags { border-left: 3px solid var(--danger); }
-  .list-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-  .list-name { font-weight: 600; font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .list-rep { font-size: .68rem; color: var(--text3); }
-  .list-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-  .list-date { font-size: .7rem; color: var(--text2); white-space: nowrap; }
-  .list-actions { display: flex; gap: 3px; align-items: center; }
-  .list-link {
-    font-size: .65rem; font-weight: 700; padding: 2px 6px;
-    border-radius: 4px; color: #fff; text-decoration: none; white-space: nowrap;
-  }
-  .list-link.hs { background: #FF7A59; }
-  .list-link.rb { background: var(--accent); }
-  .list-edit-btn {
-    font-size: .7rem; padding: 2px 7px; border-radius: 4px;
-    background: var(--surface2); color: var(--text2);
-    border: 1.5px solid var(--border); font-weight: 500; cursor: pointer;
-    transition: all .12s; white-space: nowrap;
-  }
-  .list-edit-btn:hover { background: var(--surface3); color: var(--text); }
+  .list-name { font-weight: 600; font-size: .83rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   html[data-theme="dark"] .list-item { background: var(--surface) !important; border-color: var(--border) !important; }
   html[data-theme="dark"] .list-item:hover { border-color: var(--surface3) !important; }
@@ -1588,19 +1568,8 @@ function listItemHtml(d) {
   if (isAtRisk) cls += ' at-risk';
   else if (hasFlags) cls += ' has-flags';
 
-  return `<div class="${cls}" draggable="true" data-id="${d.id}">
-    <div class="list-main">
-      <span class="list-name">${escHtml(d.name)}</span>
-      ${d.rep ? `<div class="list-rep">${escHtml(d.rep)}</div>` : ''}
-    </div>
-    <div class="list-right">
-      ${d.day4Date ? `<span class="list-date">📅 ${fmtDate(d.day4Date)}</span>` : ''}
-      <div class="list-actions">
-        ${d.hubspot ? `<a href="${d.hubspot}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="list-link hs">HS</a>` : ''}
-        ${d.remibid ? `<a href="${d.remibid}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="list-link rb">Bid</a>` : ''}
-        <button class="list-edit-btn" data-edit="${d.id}">Edit</button>
-      </div>
-    </div>
+  return `<div class="${cls}" draggable="true" data-id="${d.id}" data-edit="${d.id}">
+    <span class="list-name">${escHtml(d.name)}</span>
   </div>`;
 }
 
