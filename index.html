@@ -329,6 +329,25 @@
     cursor: pointer;
   }
   .hubspot-link:hover { background: #e8654a; transform: translateY(-1px); }
+  .remibid-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: #fff;
+    background: #2BA5F0;
+    border: none;
+    border-radius: 5px;
+    padding: 4px 10px;
+    margin-bottom: 6px;
+    margin-left: 4px;
+    text-decoration: none;
+    transition: background .12s, transform .1s;
+    cursor: pointer;
+  }
+  .remibid-link:hover { background: #1A8DD4; transform: translateY(-1px); }
+  .card-links { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 0; }
   .card-menu-btn {
     color: var(--text3);
     padding: 2px 5px;
@@ -994,6 +1013,10 @@
             <input type="url" id="fHubspot" placeholder="https://app.hubspot.com/contacts/...">
           </div>
           <div class="form-group full">
+            <label class="form-label">Remi Bid Link</label>
+            <input type="url" id="fRemibid" placeholder="https://app.remihq.com/dashboard/bids/...">
+          </div>
+          <div class="form-group full">
             <label class="form-label">Notes</label>
             <textarea id="fNotes" placeholder="Shingle color, HOA info, homeowner concerns..."></textarea>
           </div>
@@ -1406,7 +1429,10 @@ function cardHtml(d) {
       <span><span class="ico">📅</span>Day 4: <span class="${d.day4Date ? '' : 'date-empty'}">${d.day4Date ? fmtDate(d.day4Date) : '—'}</span></span>
       ${d.install  ? `<span><span class="ico">🏠</span>Install: ${fmtDate(d.install)}</span>` : ''}
     </div>
-    ${d.hubspot ? `<a class="hubspot-link" href="${d.hubspot}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🔗 HubSpot</a>` : ''}
+    ${(d.hubspot || d.remibid) ? `<div class="card-links">
+      ${d.hubspot ? `<a class="hubspot-link" href="${d.hubspot}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🔗 HubSpot</a>` : ''}
+      ${d.remibid ? `<a class="remibid-link" href="${d.remibid}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📋 Remi Bid</a>` : ''}
+    </div>` : ''}
     ${d.notes ? `<div class="card-notes">${escHtml(d.notes)}</div>` : ''}
     ${flagBadges ? `<div class="card-flags">${flagBadges}</div>` : ''}
     ${touchHtml}
@@ -1597,6 +1623,7 @@ function openEdit(id) {
   document.getElementById('fDay4Date').value = d.day4Date || '';
   document.getElementById('fInstall').value = d.install || '';
   document.getElementById('fHubspot').value = d.hubspot || '';
+  document.getElementById('fRemibid').value = d.remibid || '';
   document.getElementById('fNotes').value = d.notes || '';
   buildStageSelect(d.stage);
   buildFlagsGrid(d.flags || []);
@@ -1624,6 +1651,7 @@ function saveDeal() {
     day4Date:    document.getElementById('fDay4Date').value,
     install:     document.getElementById('fInstall').value,
     hubspot:     document.getElementById('fHubspot').value.trim(),
+    remibid:     document.getElementById('fRemibid').value.trim(),
     stage:       document.getElementById('fStage').value,
     notes:       document.getElementById('fNotes').value.trim(),
     flags,
