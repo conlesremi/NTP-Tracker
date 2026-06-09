@@ -215,7 +215,7 @@
   .board {
     display: flex;
     gap: 6px;
-    align-items: flex-start;
+    align-items: stretch;
     width: 100%;
   }
 
@@ -258,7 +258,8 @@
     color: var(--text2);
   }
   .cards-area {
-    min-height: 80px;
+    flex: 1;
+    min-height: 200px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -571,8 +572,7 @@
   [data-col="new"] .col-dot            { background: var(--accent); }
   [data-col="no-answer"] .col-dot      { background: var(--text3); }
   [data-col="day1"] .col-dot           { background: var(--success); }
-  [data-col="incomplete"] .col-dot     { background: var(--warning); }
-  [data-col="at-risk"] .col-dot        { background: var(--danger); }
+  [data-col="incomplete"] .col-dot     { background: var(--danger); }
   [data-col="day4-pending"] .col-dot   { background: var(--info); }
   [data-col="day4-complete"] .col-dot  { background: #059669; }
   [data-col="change-order"] .col-dot   { background: var(--purple); }
@@ -582,8 +582,7 @@
   [data-col="new"] .col-header         { border-top: 2.5px solid var(--accent); }
   [data-col="no-answer"] .col-header   { border-top: 2.5px solid var(--text3); }
   [data-col="day1"] .col-header        { border-top: 2.5px solid var(--success); }
-  [data-col="incomplete"] .col-header  { border-top: 2.5px solid var(--warning); }
-  [data-col="at-risk"] .col-header     { border-top: 2.5px solid var(--danger); }
+  [data-col="incomplete"] .col-header  { border-top: 2.5px solid var(--danger); }
   [data-col="day4-pending"] .col-header{ border-top: 2.5px solid var(--info); }
   [data-col="day4-complete"] .col-header{ border-top: 2.5px solid #059669; }
   [data-col="change-order"] .col-header{ border-top: 2.5px solid var(--purple); }
@@ -1135,11 +1134,10 @@ const COLUMNS = [
   { id: 'new',          label: 'New' },
   { id: 'no-answer',    label: 'No Answer' },
   { id: 'day1',         label: 'Day 1 Complete' },
-  { id: 'incomplete',   label: 'Incomplete' },
-  { id: 'at-risk',      label: 'At Risk' },
+  { id: 'incomplete',   label: 'Incomplete / At Risk' },
   { id: 'day4-pending', label: 'Day 4 Pending' },
   { id: 'day4-complete',label: 'Day 4 Complete' },
-  { id: 'change-order', label: 'Change Order' },
+  { id: 'change-order', label: 'Pending Install' },
   { id: 'installed',    label: 'Installed' },
 ];
 
@@ -1190,6 +1188,7 @@ function migrate(arr) {
   arr.forEach(d => {
     if (!d.day1Date && d.lastContact) d.day1Date = d.lastContact;
     if (d.day1Date && !d.day4Date) d.day4Date = calcDay4(d.day1Date);
+    if (d.stage === 'at-risk') d.stage = 'incomplete'; // merged into Incomplete / At Risk
   });
   return arr;
 }
@@ -1455,17 +1454,25 @@ function attachCardListeners() {
 }
 
 function attachDropZones() {
-  document.querySelectorAll('.cards-area').forEach(zone => {
-    zone.addEventListener('dragover', e => {
+  // Make the entire column a drop zone — cards-area gives the visual highlight
+  document.querySelectorAll('.column').forEach(col => {
+    const zone = col.querySelector('.cards-area');
+    col.addEventListener('dragover', e => {
       e.preventDefault();
-      zone.classList.add('drag-over');
+      if (zone) zone.classList.add('drag-over');
     });
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', e => {
+    col.addEventListener('dragleave', e => {
+      // Only remove highlight when truly leaving the column (not entering a child)
+      if (!col.contains(e.relatedTarget)) {
+        if (zone) zone.classList.remove('drag-over');
+      }
+    });
+    col.addEventListener('drop', e => {
       e.preventDefault();
-      zone.classList.remove('drag-over');
+      if (zone) zone.classList.remove('drag-over');
       if (!dragId) return;
-      const targetCol = zone.dataset.col;
+      const targetCol = col.dataset.col;
+      if (!targetCol) return;
       const deal = deals.find(d => d.id === dragId);
       if (deal && deal.stage !== targetCol) {
         deal.stage = targetCol;
@@ -1855,7 +1862,7 @@ function openSettings() {
 function colColor(id) {
   const map = {
     'new': settings.accent, 'no-answer': '#9AA3BD', 'day1': '#16A34A',
-    'incomplete': '#D97706', 'at-risk': '#DC2626', 'day4-pending': '#0284C7',
+    'incomplete': '#DC2626', 'day4-pending': '#0284C7',
     'day4-complete': '#059669', 'change-order': '#7C3AED', 'installed': '#059669'
   };
   return map[id] || '#9AA3BD';
