@@ -300,12 +300,14 @@
   }
   .cards-area {
     flex: 1;
-    min-height: 200px;
+    min-height: 80px;
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 8px;
     transition: background .15s;
-    padding: 2px;
+    padding: 2px 4px 2px 2px;
     border-radius: var(--radius);
   }
   .cards-area.drag-over {
@@ -674,6 +676,64 @@
   @keyframes slideRight { from { transform: translateX(40px); opacity: 0; } }
   .toast.success { border-left: 3px solid var(--success); }
   .toast.info    { border-left: 3px solid var(--info); }
+
+  /* ── List Mode ── */
+  .col-listmode-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 1rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color .12s, background .12s;
+    flex-shrink: 0;
+  }
+  .col-listmode-btn:hover { color: var(--text2); background: var(--surface3); }
+  .col-listmode-btn.active { color: var(--accent); }
+
+  .list-item {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: grab;
+    transition: box-shadow .12s, border-color .12s;
+    user-select: none;
+  }
+  .list-item:hover { box-shadow: var(--shadow-sm); border-color: #c5cfe0; }
+  .list-item.dragging { opacity: .45; cursor: grabbing; }
+  .list-item.at-risk { border-left: 3px solid var(--danger); }
+  .list-item.has-flags { border-left: 3px solid var(--warning); }
+  .list-item.at-risk.has-flags { border-left: 3px solid var(--danger); }
+  .list-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+  .list-name { font-weight: 600; font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-rep { font-size: .68rem; color: var(--text3); }
+  .list-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .list-date { font-size: .7rem; color: var(--text2); white-space: nowrap; }
+  .list-actions { display: flex; gap: 3px; align-items: center; }
+  .list-link {
+    font-size: .65rem; font-weight: 700; padding: 2px 6px;
+    border-radius: 4px; color: #fff; text-decoration: none; white-space: nowrap;
+  }
+  .list-link.hs { background: #FF7A59; }
+  .list-link.rb { background: var(--accent); }
+  .list-edit-btn {
+    font-size: .7rem; padding: 2px 7px; border-radius: 4px;
+    background: var(--surface2); color: var(--text2);
+    border: 1.5px solid var(--border); font-weight: 500; cursor: pointer;
+    transition: all .12s; white-space: nowrap;
+  }
+  .list-edit-btn:hover { background: var(--surface3); color: var(--text); }
+
+  html[data-theme="dark"] .list-item { background: var(--surface) !important; border-color: var(--border) !important; }
+  html[data-theme="dark"] .list-item:hover { border-color: var(--surface3) !important; }
+  html[data-theme="dark"] .list-edit-btn { background: var(--surface2) !important; border-color: var(--border) !important; }
 
   /* ── Collapsible column ── */
   .col-collapse-btn {
@@ -1406,23 +1466,26 @@ function renderBoard() {
 
   board.innerHTML = '';
   const collapsedCols = JSON.parse(localStorage.getItem('ntp_collapsed') || '[]');
+  const listModeCols  = JSON.parse(localStorage.getItem('ntp_listmode')  || '[]');
 
   COLUMNS.forEach(col => {
-    const colDeals = byStage[col.id];
-    const colEl = document.createElement('div');
+    const colDeals   = byStage[col.id];
+    const colEl      = document.createElement('div');
     const isCollapsed = collapsedCols.includes(col.id);
-    colEl.className = 'column' + (isCollapsed ? ' collapsed' : '');
+    const isListMode  = listModeCols.includes(col.id);
+    colEl.className  = 'column' + (isCollapsed ? ' collapsed' : '');
     colEl.dataset.col = col.id;
 
     let cardsHtml = colDeals.length === 0
       ? `<div class="empty-col">Drop here or<br>add a new deal</div>`
-      : colDeals.map(d => cardHtml(d)).join('');
+      : colDeals.map(d => isListMode ? listItemHtml(d) : cardHtml(d)).join('');
 
     colEl.innerHTML = `
       <div class="col-header">
         <div class="col-title"><span class="col-dot"></span>${col.label}</div>
         <div style="display:flex;align-items:center;gap:4px">
           <span class="col-count">${colDeals.length}</span>
+          <button class="col-listmode-btn ${isListMode ? 'active' : ''}" data-colid="${col.id}" title="${isListMode ? 'Card view' : 'List view'}">≡</button>
           <button class="col-collapse-btn" data-colid="${col.id}" title="Collapse">▾</button>
         </div>
       </div>
@@ -1443,6 +1506,19 @@ function renderBoard() {
       if (idx === -1) collapsed.push(id);
       else collapsed.splice(idx, 1);
       try { localStorage.setItem('ntp_collapsed', JSON.stringify(collapsed)); } catch(e) {}
+    });
+  });
+
+  // list mode toggle handlers
+  document.querySelectorAll('.col-listmode-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = btn.dataset.colid;
+      const lm = JSON.parse(localStorage.getItem('ntp_listmode') || '[]');
+      const idx = lm.indexOf(id);
+      if (idx === -1) lm.push(id); else lm.splice(idx, 1);
+      try { localStorage.setItem('ntp_listmode', JSON.stringify(lm)); } catch(e) {}
+      render();
     });
   });
 
@@ -1505,6 +1581,29 @@ function cardHtml(d) {
   </div>`;
 }
 
+function listItemHtml(d) {
+  const isAtRisk = d.stage === 'at-risk' || (d.flags && d.flags.includes('cancel'));
+  const hasFlags = d.flags && d.flags.length > 0;
+  let cls = 'list-item';
+  if (isAtRisk) cls += ' at-risk';
+  else if (hasFlags) cls += ' has-flags';
+
+  return `<div class="${cls}" draggable="true" data-id="${d.id}">
+    <div class="list-main">
+      <span class="list-name">${escHtml(d.name)}</span>
+      ${d.rep ? `<div class="list-rep">${escHtml(d.rep)}</div>` : ''}
+    </div>
+    <div class="list-right">
+      ${d.day4Date ? `<span class="list-date">📅 ${fmtDate(d.day4Date)}</span>` : ''}
+      <div class="list-actions">
+        ${d.hubspot ? `<a href="${d.hubspot}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="list-link hs">HS</a>` : ''}
+        ${d.remibid ? `<a href="${d.remibid}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="list-link rb">Bid</a>` : ''}
+        <button class="list-edit-btn" data-edit="${d.id}">Edit</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -1513,7 +1612,7 @@ function escHtml(s) {
 //  CARD INTERACTIONS
 // ────────────────────────────────────────────────
 function attachCardListeners() {
-  document.querySelectorAll('.card').forEach(card => {
+  document.querySelectorAll('.card, .list-item').forEach(card => {
     card.addEventListener('dragstart', e => {
       dragId = card.dataset.id;
       card.classList.add('dragging');
