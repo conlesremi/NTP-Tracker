@@ -222,6 +222,50 @@
   }
   .stat-chip .label { color: var(--text2); }
 
+  /* ── Closer Tabs ── */
+  .closer-tabs {
+    background: #fff;
+    border-bottom: 1.5px solid var(--border);
+    padding: 0 18px;
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .closer-tabs::-webkit-scrollbar { display: none; }
+  .closer-tab {
+    padding: 9px 14px;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--text3);
+    border-bottom: 2.5px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+  }
+  .closer-tab:hover { color: var(--text2); }
+  .closer-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .closer-tab .tab-count {
+    display: inline-block;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 0px 6px;
+    font-size: .7rem;
+    font-weight: 700;
+    margin-left: 5px;
+    color: var(--text2);
+  }
+  .closer-tab.active .tab-count { background: rgba(43,165,240,.15); color: var(--accent); }
+
+  html[data-theme="dark"] .closer-tabs { background: var(--surface) !important; border-color: var(--border) !important; }
+
   /* ── Filter Bar ── */
   .filter-bar {
     background: #fff;
@@ -1030,6 +1074,9 @@
 <!-- Summary Bar -->
 <div class="summary-bar" id="summaryBar"></div>
 
+<!-- Closer Tabs -->
+<div class="closer-tabs" id="closerTabs"></div>
+
 <!-- Filter Bar -->
 <div class="filter-bar" id="filterBar" style="display:none">
   <label>FLAG:</label>
@@ -1270,6 +1317,7 @@ let activeFilters = { flags: new Set(), stages: new Set() };
 let searchQuery = '';
 let dragId = null;
 let callTodayActive = false;
+let activeCloser = 'all';
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
 
 // ── Firebase ──
@@ -1388,14 +1436,44 @@ function filteredDeals() {
       if (!d.flags || !d.flags.some(f => activeFilters.flags.has(f))) return false;
     }
     if (callTodayActive && d.day4Date !== TODAY_ISO) return false;
+    if (activeCloser !== 'all' && (d.rep || '') !== activeCloser) return false;
     return true;
   });
 }
 
 function render() {
   renderSummary();
+  renderCloserTabs();
   renderBoard();
   renderFilters();
+}
+
+function renderCloserTabs() {
+  const bar = document.getElementById('closerTabs');
+  if (!bar) return;
+
+  // Build sorted list of closers who have at least one deal
+  const closerCounts = {};
+  deals.forEach(d => {
+    const rep = d.rep || '';
+    if (rep) closerCounts[rep] = (closerCounts[rep] || 0) + 1;
+  });
+  const closers = Object.keys(closerCounts).sort();
+
+  const allCount = deals.length;
+  let html = `<button class="closer-tab ${activeCloser === 'all' ? 'active' : ''}" data-closer="all">All <span class="tab-count">${allCount}</span></button>`;
+  closers.forEach(name => {
+    const short = name.split(' ')[0]; // first name only for tab label
+    html += `<button class="closer-tab ${activeCloser === name ? 'active' : ''}" data-closer="${escHtml(name)}">${escHtml(short)} <span class="tab-count">${closerCounts[name]}</span></button>`;
+  });
+  bar.innerHTML = html;
+
+  bar.querySelectorAll('.closer-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeCloser = tab.dataset.closer;
+      render();
+    });
+  });
 }
 
 function renderSummary() {
