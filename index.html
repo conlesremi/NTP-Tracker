@@ -1113,14 +1113,14 @@
             <label class="form-label">Closer</label>
             <select id="fRep">
               <option value="">— Select closer —</option>
-              <option>Nicolas Bellini</option>
+              <option>Ken Bellini</option>
               <option>Caleb Hanssen</option>
               <option>Christian Dimond</option>
               <option>Coleman Hedberg</option>
               <option>Maverick Quirante</option>
               <option>Micah Belliston</option>
               <option>Mick Eggertsen</option>
-              <option>Thomas Hendricks IV</option>
+              <option>Scotty Hendricks</option>
               <option>Zander Quiring</option>
             </select>
           </div>
@@ -1222,14 +1222,14 @@
           <label>Default Closer</label>
           <select id="sDefaultRep" style="max-width:170px">
             <option value="">— None —</option>
-            <option>Nicolas Bellini</option>
+            <option>Ken Bellini</option>
             <option>Caleb Hanssen</option>
             <option>Christian Dimond</option>
             <option>Coleman Hedberg</option>
             <option>Maverick Quirante</option>
             <option>Micah Belliston</option>
             <option>Mick Eggertsen</option>
-            <option>Thomas Hendricks IV</option>
+            <option>Scotty Hendricks</option>
             <option>Zander Quiring</option>
           </select>
         </div>
@@ -1346,7 +1346,10 @@ function migrate(arr) {
   arr.forEach(d => {
     if (!d.day1Date && d.lastContact) d.day1Date = d.lastContact;
     if (d.day1Date && !d.day4Date) d.day4Date = calcDay4(d.day1Date);
-    if (d.stage === 'at-risk') d.stage = 'incomplete'; // merged into Incomplete / At Risk
+    if (d.stage === 'at-risk') d.stage = 'incomplete';
+    // Closer name updates
+    if (d.rep === 'Nicolas Bellini')    d.rep = 'Ken Bellini';
+    if (d.rep === 'Thomas Hendricks IV') d.rep = 'Scotty Hendricks';
   });
   return arr;
 }
@@ -1387,28 +1390,28 @@ function saveDeals() {
 }
 function seedData() {
   return [
-    {"id":"mq11iy21xs7jz","touches":[],"name":"Merlia Foster","phone":"","rep":"Nicolas Bellini","day1Date":"2026-06-05","day4Date":"2026-06-09","install":"","stage":"day4-pending","notes":"","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60842267821?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Dmerlin"},
-    {"id":"mq11hqxpgr1ob","touches":[],"name":"Lola Sanders","phone":"","rep":"Nicolas Bellini","day1Date":"2026-06-05","day4Date":"2026-06-08","install":"","stage":"no-answer","notes":"","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60860778671?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
-    {"id":"mq11gqkrg4zsn","touches":[],"name":"Chris Knable","phone":"","rep":"Thomas Hendricks IV","day1Date":"2026-06-05","day4Date":"2026-06-08","install":"","stage":"no-answer","notes":"","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60861899412?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
+    {"id":"mq11iy21xs7jz","touches":[],"name":"Merlia Foster","phone":"","rep":"Ken Bellini","day1Date":"2026-06-05","day4Date":"2026-06-09","install":"","stage":"day4-pending","notes":"","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60842267821?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Dmerlin"},
+    {"id":"mq11hqxpgr1ob","touches":[],"name":"Lola Sanders","phone":"","rep":"Ken Bellini","day1Date":"2026-06-05","day4Date":"2026-06-08","install":"","stage":"no-answer","notes":"","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60860778671?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
+    {"id":"mq11gqkrg4zsn","touches":[],"name":"Chris Knable","phone":"","rep":"Scotty Hendricks","day1Date":"2026-06-05","day4Date":"2026-06-08","install":"","stage":"no-answer","notes":"","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60861899412?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
     {"id":"mq11g7gqbcg0s","touches":[],"name":"Michelle Davis","phone":"","rep":"Micah Belliston","day1Date":"2026-06-05","day4Date":"2026-06-09","install":"","stage":"day4-pending","notes":"","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60863129723?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Dmichelle"},
     {"id":"mq11fceehp8i8","touches":[],"name":"Charlene Hernandez","phone":"","rep":"Christian Dimond","day1Date":"2026-06-05","day4Date":"2026-06-08","install":"","stage":"no-answer","notes":"","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60872785282?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
-    {"id":"mq04gezlbdy65","touches":[],"name":"Amanda Butler","phone":"","rep":"Nicolas Bellini","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","stage":"day4-pending","lastContact":"2026-06-04","notes":"Shingle color confirmed","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60844535986?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Damand"},
+    {"id":"mq04gezlbdy65","touches":[],"name":"Amanda Butler","phone":"","rep":"Ken Bellini","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","stage":"day4-pending","lastContact":"2026-06-04","notes":"Shingle color confirmed","flags":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60844535986?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Damand"},
     {"id":"mq03vylh872v8","stage":"day4-pending","name":"Joseph Lockett","phone":"","rep":"Maverick Quirante","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-1/208696084759"},
     {"id":"mq03vylh3dsj8","stage":"day4-pending","name":"William McGowan","phone":"","rep":"Maverick Quirante","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/58938059274?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
     {"id":"mq03vylhhleqt","stage":"day4-pending","name":"Toni Shaw","phone":"","rep":"Coleman Hedberg","day1Date":"2026-06-08","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"Shingle: Dual Brown","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60784560445?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
-    {"id":"mq03vylhbrqhe","stage":"day4-pending","name":"Patti Padgett","phone":"","rep":"Nicolas Bellini","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"Decking risk noted.","flags":["decking"],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60783458143?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Dpatty"},
+    {"id":"mq03vylhbrqhe","stage":"day4-pending","name":"Patti Padgett","phone":"","rep":"Ken Bellini","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"Decking risk noted.","flags":["decking"],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60783458143?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Dpatty"},
     {"id":"mq03vylhinqu1","stage":"day4-pending","name":"Julia Moore","phone":"","rep":"Zander Quiring","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60801010591?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
-    {"id":"mq03vylh3s59a","stage":"day4-pending","name":"Pat Fish","phone":"","rep":"Thomas Hendricks IV","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"Docs resent per request.","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60807717946?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
-    {"id":"mq03vylh6eh7d","stage":"day4-pending","name":"Elman Frias","phone":"","rep":"Nicolas Bellini","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"Works 12hr shifts — call or text.","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60798660368?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Delm"},
+    {"id":"mq03vylh3s59a","stage":"day4-pending","name":"Pat Fish","phone":"","rep":"Scotty Hendricks","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"Docs resent per request.","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60807717946?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
+    {"id":"mq03vylh6eh7d","stage":"day4-pending","name":"Elman Frias","phone":"","rep":"Ken Bellini","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"Works 12hr shifts — call or text.","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60798660368?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Delm"},
     {"id":"mq03vylh9ru60","stage":"day4-pending","name":"John or Virgina Imes","phone":"","rep":"Caleb Hanssen","day1Date":"2026-06-03","day4Date":"2026-06-08","install":"","lastContact":"2026-06-03","notes":"","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/38879047494?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
     {"id":"mq03vylh8jgny","stage":"day4-pending","name":"Thomas Carrier","phone":"","rep":"Zander Quiring","day1Date":"2026-06-03","day4Date":"2026-06-10","install":"","lastContact":"2026-06-03","notes":"","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60791624247?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Dthomas"},
     {"id":"mq03vylhmbdq3","stage":"incomplete","name":"Mildred Alicea","phone":"","rep":"Coleman Hedberg","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-05","notes":"Son Alex answered, samples sent. Shingle color still pending.","flags":["shingle"],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60796315296?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
-    {"id":"mq03vylhz73jc","stage":"day4-pending","name":"Nora Gonzales","phone":"","rep":"Thomas Hendricks IV","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-04","notes":"","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60788364838?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
+    {"id":"mq03vylhz73jc","stage":"day4-pending","name":"Nora Gonzales","phone":"","rep":"Scotty Hendricks","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-04","notes":"","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60788364838?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
     {"id":"mq03vylh9y3i2","stage":"day4-pending","name":"Charliee Yates","phone":"","rep":"Christian Dimond","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-04","notes":"Shingle: Dual Gray. May not answer — will call back.","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60816939884?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3DCharles"},
     {"id":"mq03vylhehoqj","stage":"incomplete","name":"John Moats","phone":"","rep":"Christian Dimond","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-05","notes":"Voicemail left.\nLoan Maxed, Requires fascia and soffit","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60796142100?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Djohn"},
-    {"id":"mq03vylhyo2jg","stage":"at-risk","name":"Dave Erno","phone":"","rep":"Thomas Hendricks IV","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-04","notes":"Interest rate concern, scope unconfirmed. Scotty notified.","flags":["cancel"],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60843390074?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Ddave"},
+    {"id":"mq03vylhyo2jg","stage":"at-risk","name":"Dave Erno","phone":"","rep":"Scotty Hendricks","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-04","notes":"Interest rate concern, scope unconfirmed. Scotty notified.","flags":["cancel"],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60843390074?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Ddave"},
     {"id":"mq03vylhir3w1","stage":"incomplete","name":"Gene Birch","phone":"","rep":"Zander Quiring","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-05","notes":"Voicemail left.\nWrong Address signed on HIC","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60846676333?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist"},
-    {"id":"mq03vylhxlanp","stage":"day4-pending","name":"Walter Cope","phone":"","rep":"Thomas Hendricks IV","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-04","notes":"Shingle: Harvard Slate. Chimney exhaust vent question pending — sent to OPS.","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60696698143?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Dwalter"}
+    {"id":"mq03vylhxlanp","stage":"day4-pending","name":"Walter Cope","phone":"","rep":"Scotty Hendricks","day1Date":"2026-06-04","day4Date":"2026-06-08","install":"","lastContact":"2026-06-04","notes":"Shingle: Harvard Slate. Chimney exhaust vent question pending — sent to OPS.","flags":[],"touches":[],"hubspot":"https://app.hubspot.com/contacts/46807501/record/0-3/60696698143?eschref=%2Fcontacts%2F46807501%2Fobjects%2F0-3%2Fviews%2F66482285%2Flist%3Fquery%3Dwalter"}
   ];
 }
 
